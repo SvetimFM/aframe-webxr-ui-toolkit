@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>A-Frame WebXR UI Toolkit - Demo Hub</title>
+  <meta name="description" content="A-Frame WebXR UI Toolkit examples and demos">
+  <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+  <script type="module">
+    // Import the toolkit
+    import './src/index.js';
+    import { BaseMenu, MenuRegistry } from './src/index.js';
+    
+    // Create main demo menu
+    class DemoHubMenu extends BaseMenu {
+      constructor() {
+        super('demo-hub');
+      }
+      
+      render(container) {
+        // Clear previous content
+        this.cleanup();
+        
+        // Create menu panel (scaled down by factor of 4)
+        const panel = this.createElement('a-plane');
+        panel.setAttribute('width', 0.075);
+        panel.setAttribute('height', 0.1);
+        panel.setAttribute('color', '#1a1a1a');
+        panel.setAttribute('shader', 'flat');
+        panel.setAttribute('position', '0 0 -0.01');
+        container.appendChild(panel);
+        
+        // Add title (scaled down by factor of 4)
+        this.createTitle(container, 'UI Kit', {
+          position: '0 0.04 0',
+          scale: 0.03,
+          color: '#FFFFFF'
+        });
+        
+        // Add subtitle (scaled down by factor of 4)
+        this.createSubtitle(container, 'Demos', {
+          position: '0 0.03 0',
+          scale: 0.02,
+          color: '#AAAAAA'
+        });
+        
+        // Add divider
+        this.createDivider(container, {
+          position: '0 0.025 0',
+          width: 0.06
+        });
+        
+        // Demo buttons
+        const demos = [
+          {
+            label: 'Basic Menu Example',
+            url: '/examples/basic-menu.html',
+            color: '#4285F4',
+            description: 'Simple menu navigation'
+          },
+          {
+            label: 'VR Test Harness',
+            url: '/tests/vr-protocols/test-harness.html',
+            color: '#34A853',
+            description: 'Hand tracking test suite'
+          },
+          {
+            label: 'Button Showcase',
+            url: '/examples/button-showcase.html',
+            color: '#FBBC04',
+            description: 'All button variations'
+          },
+          {
+            label: 'UI Elements Gallery',
+            url: '/examples/ui-elements.html',
+            color: '#9C27B0',
+            description: 'Markers, lines, grids'
+          }
+        ];
+        
+        demos.forEach((demo, index) => {
+          const y = 0.01 - (index * 0.02); // Tiny spacing
+          
+          this.createButton(container, {
+            label: demo.label.substring(0, 8), // Shorter labels
+            position: `0 ${y} 0`,
+            width: 0.06, // Tiny buttons
+            height: 0.015, // Tiny height
+            color: demo.color,
+            fontSize: 0.02, // Tiny font
+            onClick: () => {
+              // Navigate to demo
+              window.location.href = demo.url;
+            }
+          });
+        });
+        
+      }
+    }
+    
+    // Quick navigation menu for within demos
+    class QuickNavMenu extends BaseMenu {
+      constructor() {
+        super('quick-nav');
+      }
+      
+      render(container) {
+        this.cleanup();
+        
+        // Compact menu
+        const panel = this.createElement('a-plane');
+        panel.setAttribute('width', 0.15);
+        panel.setAttribute('height', 0.2);
+        panel.setAttribute('color', '#333333');
+        panel.setAttribute('opacity', 0.9);
+        panel.setAttribute('position', '0 0 -0.01');
+        container.appendChild(panel);
+        
+        this.createTitle(container, 'Navigate', {
+          position: '0 0.08 0',
+          scale: 0.03
+        });
+        
+        this.createButton(container, {
+          label: 'Home',
+          position: '0 0.03 0',
+          width: 0.12,
+          height: 0.04,
+          fontSize: 0.025,
+          onClick: () => window.location.href = '/'
+        });
+        
+        this.createButton(container, {
+          label: 'Close',
+          position: '0 -0.05 0',
+          width: 0.12,
+          height: 0.04,
+          fontSize: 0.025,
+          color: '#666666',
+          onClick: () => this.hide()
+        });
+      }
+    }
+    
+    // Register component
+    AFRAME.registerComponent('demo-hub', {
+      init: function() {
+        // Register menus
+        MenuRegistry.register(new DemoHubMenu());
+        MenuRegistry.register(new QuickNavMenu());
+        
+        // Show main menu
+        setTimeout(() => {
+          MenuRegistry.showMenu('demo-hub', this.el);
+        }, 500);
+        
+        // Add keyboard shortcut for quick nav
+        document.addEventListener('keypress', (e) => {
+          if (e.key === 'n') {
+            const quickNav = document.querySelector('#quick-nav');
+            if (quickNav.getAttribute('visible')) {
+              MenuRegistry.hideActiveMenu();
+            } else {
+              MenuRegistry.showMenu('quick-nav', quickNav);
+            }
+          }
+        });
+      }
+    });
+  </script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      background: #1a1a1a;
+    }
+    .info {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: white;
+      background: rgba(0,0,0,0.8);
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 350px;
+      backdrop-filter: blur(10px);
+    }
+    .info h1 {
+      margin: 0 0 10px 0;
+      font-size: 24px;
+      color: #4285F4;
+    }
+    .info h3 {
+      margin: 15px 0 5px 0;
+      color: #FBBC04;
+    }
+    .info p {
+      margin: 5px 0;
+      line-height: 1.5;
+      color: #CCCCCC;
+    }
+    .info code {
+      background: rgba(255,255,255,0.1);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+    .controls {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      color: white;
+    }
+    .controls button {
+      margin: 5px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #4285F4;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .controls button:hover {
+      background: #5396F5;
+    }
+  </style>
+</head>
+<body>
+  <div class="info">
+    <h1>A-Frame WebXR UI Toolkit</h1>
+    <p>Production-ready UI components for WebXR with hand tracking support.</p>
+    
+    <h3>🎮 Controls</h3>
+    <p>• <strong>VR:</strong> Use hand tracking or controllers</p>
+    <p>• <strong>Desktop:</strong> Click with mouse</p>
+    <p>• <strong>Mobile:</strong> Tap to interact</p>
+    
+    <h3>⌨️ Shortcuts</h3>
+    <p>• Press <code>N</code> for quick navigation</p>
+    <p>• Press <code>Enter</code> to toggle VR mode</p>
+  </div>
+  
+  <div class="controls">
+    <button onclick="document.querySelector('a-scene').enterVR()">
+      Enter VR
+    </button>
+  </div>
+
+  <a-scene 
+    webxr="mode: immersive-ar;
+           optionalFeatures: hit-test, dom-overlay, anchors;
+           requiredFeatures: local-floor, hand-tracking;
+           referenceSpaceType: local-floor"
+    renderer="antialias: true; colorManagement: true; precision: high; foveationLevel: 1"
+    background="color: transparent"
+    vr-mode-ui="enabled: true; enterAREnabled: true; enterVREnabled: true">
+    
+    <!-- Camera rig -->
+    <a-entity id="cameraRig" position="0 0 0">
+      <!-- Camera -->
+      <a-camera position="0 1.6 0" 
+                look-controls="pointerLockEnabled: false" 
+                wasd-controls="enabled: false">
+      </a-camera>
+      
+      <!-- Hand tracking entities -->
+      <a-entity id="leftHand" 
+                hand-tracking-controls="hand: left; modelStyle: mesh; modelColor: #E91E63">
+      </a-entity>
+      <a-entity id="rightHand" 
+                hand-tracking-controls="hand: right; modelStyle: mesh; modelColor: #2196F3">
+      </a-entity>
+    </a-entity>
+    
+    <!-- Main menu container (grabbable) -->
+    <a-entity 
+      id="menu-container" 
+      position="0 1.2 -0.3"
+      demo-hub
+      grabbable>
+    </a-entity>
+    
+    <!-- Quick nav container (hidden by default) -->
+    <a-entity
+      id="quick-nav"
+      position="1.2 1.5 -1.5"
+      visible="false">
+    </a-entity>
+    
+    <!-- Ambient lighting for AR -->
+    <a-light type="ambient" color="#FFFFFF" intensity="0.8"></a-light>
+    <a-light type="directional" position="0 5 0" color="#FFFFFF" intensity="0.3"></a-light>
+  </a-scene>
+</body>
+</html>

@@ -1,0 +1,50 @@
+{
+  "name": "aframe-webxr-ui-toolkit",
+  "version": "0.1.0",
+  "description": "Production-ready WebXR UI components for A-Frame with hand tracking support",
+  "keywords": ["aframe", "webxr", "vr", "ar", "hand-tracking", "ui", "menu", "components"],
+  "main": "dist/aframe-webxr-ui-toolkit.js",
+  "module": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "test": "vitest",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
+    "test:all": "node tests/run-tests.js",
+    "test:vr": "vite --open /tests/vr-protocols/test-harness.html",
+    "docs": "jsdoc -c jsdoc.json",
+    "prepublishOnly": "npm run build && npm run test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_ORG/aframe-webxr-ui-toolkit"
+  },
+  "author": "O3Measure Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/YOUR_ORG/aframe-webxr-ui-toolkit/issues"
+  },
+  "homepage": "https://github.com/YOUR_ORG/aframe-webxr-ui-toolkit#readme",
+  "peerDependencies": {
+    "aframe": ">=1.3.0"
+  },
+  "devDependencies": {
+    "aframe": "^1.7.0",
+    "vite": "^6.0.6",
+    "vitest": "^2.1.8",
+    "jsdom": "^26.0.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "jsdoc": "^4.0.0"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

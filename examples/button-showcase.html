@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Button Showcase - A-Frame WebXR UI Toolkit</title>
+  <meta name="description" content="All button variations and configurations">
+  <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+  <script type="module">
+    import '../src/index.js';
+    
+    AFRAME.registerComponent('button-showcase', {
+      init: function() {
+        // Button configurations to showcase
+        const buttonConfigs = [
+          // Row 1 - Sizes
+          { label: 'Small', width: 0.08, height: 0.04, position: '-0.3 2 -2' },
+          { label: 'Medium', width: 0.15, height: 0.06, position: '0 2 -2' },
+          { label: 'Large', width: 0.25, height: 0.1, position: '0.35 2 -2' },
+          
+          // Row 2 - Colors
+          { label: 'Primary', color: '#4285F4', position: '-0.3 1.7 -2' },
+          { label: 'Success', color: '#34A853', position: '0 1.7 -2' },
+          { label: 'Warning', color: '#FBBC04', position: '0.3 1.7 -2' },
+          
+          // Row 3 - More colors
+          { label: 'Danger', color: '#EA4335', position: '-0.3 1.4 -2' },
+          { label: 'Purple', color: '#9C27B0', position: '0 1.4 -2' },
+          { label: 'Dark', color: '#333333', position: '0.3 1.4 -2' },
+          
+          // Row 4 - States
+          { label: 'Enabled', enabled: true, position: '-0.3 1.1 -2' },
+          { label: 'Disabled', enabled: false, position: '0 1.1 -2' },
+          { label: 'Toggle', toggleable: true, position: '0.3 1.1 -2' },
+          
+          // Row 5 - Text variations
+          { label: '🚀 Emoji', position: '-0.3 0.8 -2' },
+          { label: 'Long Button Text Here', width: 0.25, position: '0.1 0.8 -2' },
+          
+          // Row 6 - Custom styles
+          { 
+            label: 'Custom', 
+            color: '#FF6B6B',
+            hoverColor: '#FF8787',
+            pressColor: '#FF5252',
+            textColor: '#000000',
+            position: '-0.3 0.5 -2'
+          },
+          {
+            label: 'Rounded Off',
+            rounded: false,
+            position: '0 0.5 -2'
+          },
+          {
+            label: 'Big Font',
+            fontSize: 0.04,
+            height: 0.08,
+            position: '0.3 0.5 -2'
+          }
+        ];
+        
+        // Create all buttons
+        buttonConfigs.forEach((config, index) => {
+          const button = document.createElement('a-entity');
+          
+          // Set button attributes
+          const buttonAttrs = { ...config };
+          delete buttonAttrs.position;
+          button.setAttribute('button', buttonAttrs);
+          
+          // Set position
+          button.setAttribute('position', config.position);
+          
+          // Add click handler
+          button.addEventListener('button-clicked', (e) => {
+            console.log(`Button clicked: ${e.detail.label}`, e.detail);
+            
+            // Show feedback
+            const feedback = document.querySelector('#feedback-text');
+            feedback.setAttribute('value', `Clicked: ${e.detail.label}${e.detail.toggled !== undefined ? ` (toggled: ${e.detail.toggled})` : ''}`);
+          });
+          
+          this.el.appendChild(button);
+        });
+        
+        // Add category labels
+        const labels = [
+          { text: 'Sizes', position: '-0.5 2 -2' },
+          { text: 'Colors', position: '-0.5 1.7 -2' },
+          { text: 'More Colors', position: '-0.5 1.4 -2' },
+          { text: 'States', position: '-0.5 1.1 -2' },
+          { text: 'Text', position: '-0.5 0.8 -2' },
+          { text: 'Custom', position: '-0.5 0.5 -2' }
+        ];
+        
+        labels.forEach(label => {
+          const text = document.createElement('a-text');
+          text.setAttribute('value', label.text);
+          text.setAttribute('position', label.position);
+          text.setAttribute('color', '#888888');
+          text.setAttribute('align', 'right');
+          text.setAttribute('width', 1);
+          text.setAttribute('scale', '0.08 0.08 0.08');
+          this.el.appendChild(text);
+        });
+      }
+    });
+  </script>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      background: #1a1a1a;
+    }
+    .info {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      background: rgba(0,0,0,0.8);
+      padding: 15px;
+      border-radius: 5px;
+      max-width: 300px;
+    }
+    .info h3 {
+      margin: 0 0 10px 0;
+      color: #4285F4;
+    }
+    .back-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 10px 20px;
+      background: #4285F4;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .back-button:hover {
+      background: #5396F5;
+    }
+  </style>
+</head>
+<body>
+  <div class="info">
+    <h3>Button Showcase</h3>
+    <p>Explore all button variations:</p>
+    <ul>
+      <li>Different sizes</li>
+      <li>Color schemes</li>
+      <li>Toggle states</li>
+      <li>Custom styling</li>
+    </ul>
+    <p>Click any button to test interaction!</p>
+  </div>
+  
+  <a href="/" class="back-button">← Back to Hub</a>
+
+  <a-scene 
+    webxr="mode: immersive-vr;
+           requiredFeatures: local-floor, hand-tracking;
+           referenceSpaceType: local-floor"
+    renderer="antialias: true; colorManagement: true; precision: high; foveationLevel: 1"
+    background="color: #0a0a0a"
+    vr-mode-ui="enabled: true">
+    
+    <!-- Camera with hand tracking -->
+    <a-entity camera position="0 1.6 0">
+      <a-entity hand-tracking-controls="hand: left"></a-entity>
+      <a-entity hand-tracking-controls="hand: right"></a-entity>
+    </a-entity>
+    
+    <!-- Button showcase container -->
+    <a-entity button-showcase></a-entity>
+    
+    <!-- Title -->
+    <a-text
+      value="Button Component Showcase"
+      position="0 2.5 -2"
+      align="center"
+      color="#FFFFFF"
+      width="3"
+      scale="0.15 0.15 0.15">
+    </a-text>
+    
+    <!-- Feedback display -->
+    <a-plane
+      position="0 0.1 -2"
+      width="0.8"
+      height="0.15"
+      color="#1a1a1a"
+      opacity="0.9">
+    </a-plane>
+    
+    <a-text
+      id="feedback-text"
+      value="Click any button to test"
+      position="0 0.1 -1.99"
+      align="center"
+      color="#FBBC04"
+      width="1.5"
+      scale="0.08 0.08 0.08">
+    </a-text>
+    
+    <!-- Background panel -->
+    <a-plane
+      position="0 1.25 -2.1"
+      width="1.5"
+      height="2.2"
+      color="#1a1a1a"
+      opacity="0.5">
+    </a-plane>
+    
+    <!-- Lighting -->
+    <a-light type="ambient" color="#404040"></a-light>
+    <a-light type="directional" position="0 2 -1" color="#FFFFFF"></a-light>
+  </a-scene>
+</body>
+</html>

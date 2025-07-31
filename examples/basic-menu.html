@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>A-Frame WebXR UI Toolkit - Basic Menu Example</title>
+  <meta name="description" content="Basic menu example using A-Frame WebXR UI Toolkit">
+  <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+  <script type="module">
+    // Import the toolkit
+    import '../src/index.js';
+    import { BaseMenu, MenuRegistry } from '../src/index.js';
+    
+    // Create a simple main menu
+    class MainMenu extends BaseMenu {
+      constructor() {
+        super('main-menu');
+      }
+      
+      render(container) {
+        // Clear previous content
+        this.cleanup();
+        
+        // Create menu panel
+        const panel = this.createElement('a-plane');
+        panel.setAttribute('width', 0.3);
+        panel.setAttribute('height', 0.25);
+        panel.setAttribute('color', '#1a1a1a');
+        panel.setAttribute('shader', 'flat');
+        panel.setAttribute('position', '0 0 -0.01');
+        container.appendChild(panel);
+        
+        // Add title
+        this.createTitle(container, 'Main Menu', {
+          position: '0 0.08 0',
+          scale: 0.04
+        });
+        
+        // Add subtitle
+        this.createSubtitle(container, 'Hand tracking ready!', {
+          position: '0 0.05 0',
+          scale: 0.025
+        });
+        
+        // Add divider
+        this.createDivider(container, {
+          position: '0 0.03 0',
+          width: 0.25
+        });
+        
+        // Add buttons
+        this.createButton(container, {
+          label: 'Start Game',
+          position: '0 -0.01 0',
+          width: 0.2,
+          height: 0.04,
+          onClick: () => {
+            console.log('Start game clicked!');
+            this.emit('start-game');
+          }
+        });
+        
+        this.createButton(container, {
+          label: 'Settings',
+          position: '0 -0.06 0',
+          width: 0.2,
+          height: 0.04,
+          onClick: () => {
+            console.log('Settings clicked!');
+            MenuRegistry.showMenu('settings');
+          }
+        });
+        
+        this.createButton(container, {
+          label: 'Exit',
+          position: '0 -0.11 0',
+          width: 0.2,
+          height: 0.04,
+          color: '#CC0000',
+          hoverColor: '#FF0000',
+          onClick: () => {
+            console.log('Exit clicked!');
+            this.emit('exit');
+          }
+        });
+      }
+    }
+    
+    // Create settings menu
+    class SettingsMenu extends BaseMenu {
+      constructor() {
+        super('settings-menu');
+      }
+      
+      render(container) {
+        this.cleanup();
+        
+        // Create menu panel
+        const panel = this.createElement('a-plane');
+        panel.setAttribute('width', 0.3);
+        panel.setAttribute('height', 0.2);
+        panel.setAttribute('color', '#1a1a1a');
+        panel.setAttribute('shader', 'flat');
+        panel.setAttribute('position', '0 0 -0.01');
+        container.appendChild(panel);
+        
+        // Add title
+        this.createTitle(container, 'Settings', {
+          position: '0 0.08 0',
+          scale: 0.04
+        });
+        
+        // Toggle button example
+        this.createButton(container, {
+          label: 'Sound: ON',
+          position: '0 0.02 0',
+          width: 0.2,
+          height: 0.04,
+          toggleable: true,
+          onClick: (detail) => {
+            const label = detail.toggled ? 'Sound: OFF' : 'Sound: ON';
+            // Update button label
+            event.target.setAttribute('button', 'label', label);
+          }
+        });
+        
+        // Back button
+        this.createButton(container, {
+          label: 'Back',
+          position: '0 -0.05 0',
+          width: 0.15,
+          height: 0.04,
+          color: '#666666',
+          onClick: () => {
+            MenuRegistry.showMenu('main-menu');
+          }
+        });
+      }
+    }
+    
+    // Register menus when scene loads
+    AFRAME.registerComponent('menu-demo', {
+      init: function() {
+        // Register menus
+        MenuRegistry.register(new MainMenu());
+        MenuRegistry.register(new SettingsMenu());
+        
+        // Show main menu
+        setTimeout(() => {
+          MenuRegistry.showMenu('main-menu', this.el);
+        }, 1000);
+      }
+    });
+  </script>
+  <style>
+    body {
+      font-family: sans-serif;
+    }
+    .info {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      background: rgba(0,0,0,0.8);
+      padding: 10px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="info">
+    <h3>Basic Menu Example</h3>
+    <p>Use hand tracking or controllers to interact with the menu.</p>
+    <p>Pinch or press buttons to activate them.</p>
+  </div>
+
+  <a-scene 
+    webxr="mode: immersive-ar;
+           optionalFeatures: hit-test, dom-overlay, anchors;
+           requiredFeatures: local-floor, hand-tracking;
+           referenceSpaceType: local-floor"
+    renderer="antialias: true; colorManagement: true; precision: high; foveationLevel: 1"
+    background="color: transparent"
+    vr-mode-ui="enabled: true; enterAREnabled: true; enterVREnabled: true">
+    
+    <!-- Camera with hand tracking -->
+    <a-entity camera position="0 1.6 0">
+      <a-entity 
+        hand-tracking-controls="hand: left">
+      </a-entity>
+      <a-entity 
+        hand-tracking-controls="hand: right">
+      </a-entity>
+    </a-entity>
+    
+    <!-- Menu container -->
+    <a-entity 
+      id="menu-container" 
+      position="0 1.5 -1.5"
+      menu-demo>
+    </a-entity>
+    
+    <!-- Lighting -->
+    <a-light type="ambient" color="#666"></a-light>
+    <a-light type="directional" position="0 2 -1" color="#FFF"></a-light>
+  </a-scene>
+</body>
+</html>

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>A-Frame WebXR UI Toolkit - VR Test Harness</title>
+  <meta name="description" content="Test harness for VR testing protocols">
+  <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+  <script type="module">
+    import '../../src/index.js';
+    
+    // Test logger for recording interactions
+    window.VRTestLogger = {
+      sessionStart: Date.now(),
+      events: [],
+      metrics: {
+        frameCount: 0,
+        frameDrops: 0,
+        lastFrameTime: 0,
+        averageFPS: 0
+      },
+      
+      logEvent(type, data) {
+        this.events.push({
+          timestamp: Date.now() - this.sessionStart,
+          type: type,
+          data: data,
+          frameNumber: this.metrics.frameCount
+        });
+        
+        // Show in debug panel
+        const debugText = document.querySelector('#debug-log');
+        if (debugText) {
+          const lines = this.events.slice(-5).map(e => 
+            `${(e.timestamp/1000).toFixed(1)}s: ${e.type}`
+          );
+          debugText.setAttribute('value', lines.join('\n'));
+        }
+      },
+      
+      updateMetrics(timestamp) {
+        this.metrics.frameCount++;
+        
+        if (this.metrics.lastFrameTime) {
+          const frameDelta = timestamp - this.metrics.lastFrameTime;
+          if (frameDelta > 16.67 * 1.5) { // 1.5x frame time = dropped frame
+            this.metrics.frameDrops++;
+          }
+          
+          // Update FPS
+          const fps = 1000 / frameDelta;
+          this.metrics.averageFPS = this.metrics.averageFPS * 0.95 + fps * 0.05;
+          
+          // Update display
+          const fpsText = document.querySelector('#fps-display');
+          if (fpsText) {
+            fpsText.setAttribute('value', `FPS: ${Math.round(this.metrics.averageFPS)}`);
+          }
+        }
+        
+        this.metrics.lastFrameTime = timestamp;
+      },
+      
+      exportResults() {
+        return {
+          session: {
+            duration: Date.now() - this.sessionStart,
+            device: navigator.userAgent,
+            timestamp: new Date().toISOString()
+          },
+          metrics: this.metrics,
+          events: this.events
+        };
+      }
+    };
+    
+    // Test scene component
+    AFRAME.registerComponent('vr-test-scene', {
+      init: function() {
+        // Create test buttons
+        this.createTestButtons();
+        
+        // Set up hand tracking debug
+        this.setupHandDebug();
+        
+        // Start metrics tracking
+        this.el.sceneEl.addEventListener('enterVR', () => {
+          window.VRTestLogger.logEvent('enter-vr', {});
+          this.startMetricsTracking();
+        });
+        
+        this.el.sceneEl.addEventListener('exitVR', () => {
+          window.VRTestLogger.logEvent('exit-vr', {});
+          console.log('Test Results:', window.VRTestLogger.exportResults());
+        });
+      },
+      
+      createTestButtons() {
+        const tests = [
+          { id: 'test-1', label: 'Press', color: '#4285F4' },
+          { id: 'test-2', label: 'Toggle', color: '#34A853', toggleable: true },
+          { id: 'test-3', label: 'Small', color: '#FBBC04', width: 0.02, height: 0.01 },
+          { id: 'test-4', label: 'Large', color: '#EA4335', width: 0.06, height: 0.025 },
+          { id: 'test-5', label: 'Off', color: '#808080', enabled: false }
+        ];
+        
+        tests.forEach((test, index) => {
+          const button = document.createElement('a-entity');
+          button.setAttribute('id', test.id);
+          button.setAttribute('button', {
+            label: test.label,
+            color: test.color,
+            width: test.width || 0.04,
+            height: test.height || 0.015,
+            toggleable: test.toggleable || false,
+            enabled: test.enabled !== false
+          });
+          
+          // Position in grid (scaled down)
+          const row = Math.floor(index / 3);
+          const col = index % 3;
+          button.setAttribute('position', {
+            x: (col - 1) * 0.05,
+            y: 1.2 - row * 0.04,
+            z: -0.4
+          });
+          
+          // Make grabbable
+          button.setAttribute('grabbable', '');
+          
+          // Add event logging
+          button.addEventListener('button-hover', (e) => {
+            window.VRTestLogger.logEvent('hover', { 
+              button: test.id,
+              label: e.detail.label 
+            });
+          });
+          
+          button.addEventListener('button-pressed', (e) => {
+            window.VRTestLogger.logEvent('pressed', { 
+              button: test.id,
+              label: e.detail.label 
+            });
+          });
+          
+          button.addEventListener('button-clicked', (e) => {
+            window.VRTestLogger.logEvent('clicked', { 
+              button: test.id,
+              label: e.detail.label,
+              toggled: e.detail.toggled
+            });
+          });
+          
+          this.el.appendChild(button);
+        });
+      },
+      
+      setupHandDebug() {
+        // Create hand position indicators
+        ['left', 'right'].forEach(hand => {
+          const indicator = document.createElement('a-sphere');
+          indicator.setAttribute('id', `hand-debug-${hand}`);
+          indicator.setAttribute('radius', 0.01);
+          indicator.setAttribute('color', hand === 'left' ? '#FF0000' : '#0000FF');
+          indicator.setAttribute('visible', false);
+          this.el.sceneEl.appendChild(indicator);
+        });
+        
+        // Update hand positions
+        this.el.sceneEl.addEventListener('hand-tracking-extras-ready', (e) => {
+          const hand = e.detail.hand;
+          const handEl = e.target;
+          
+          handEl.addEventListener('hand-tracking-extras-handModel-update', () => {
+            const indicator = document.querySelector(`#hand-debug-${hand}`);
+            if (indicator && handEl.components['hand-tracking-controls'].indexTipPosition) {
+              indicator.setAttribute('position', 
+                handEl.components['hand-tracking-controls'].indexTipPosition
+              );
+              indicator.setAttribute('visible', true);
+            }
+          });
+        });
+      },
+      
+      startMetricsTracking() {
+        const trackMetrics = (timestamp) => {
+          window.VRTestLogger.updateMetrics(timestamp);
+          
+          if (this.el.sceneEl.is('vr-mode')) {
+            this.el.sceneEl.renderer.xr.getSession().requestAnimationFrame(trackMetrics);
+          }
+        };
+        
+        this.el.sceneEl.renderer.xr.getSession().requestAnimationFrame(trackMetrics);
+      }
+    });
+    
+    // Distance measurement component
+    AFRAME.registerComponent('distance-measurement', {
+      init: function() {
+        this.hand = null;
+        this.distanceText = document.querySelector('#distance-display');
+      },
+      
+      tick: function() {
+        if (!this.distanceText) return;
+        
+        // Find closest hand
+        const hands = document.querySelectorAll('[hand-tracking-controls]');
+        let closestDistance = Infinity;
+        
+        hands.forEach(handEl => {
+          const handControls = handEl.components['hand-tracking-controls'];
+          if (handControls && handControls.indexTipPosition) {
+            const distance = this.el.object3D.position.distanceTo(
+              handControls.indexTipPosition
+            );
+            if (distance < closestDistance) {
+              closestDistance = distance;
+            }
+          }
+        });
+        
+        if (closestDistance < Infinity) {
+          this.distanceText.setAttribute('value', 
+            `Distance: ${(closestDistance * 100).toFixed(1)}cm`
+          );
+        }
+      }
+    });
+  </script>
+  <style>
+    body {
+      font-family: sans-serif;
+    }
+    .info {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      background: rgba(0,0,0,0.8);
+      padding: 10px;
+      border-radius: 5px;
+      max-width: 300px;
+    }
+    .controls {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+    }
+    button {
+      margin: 5px;
+      padding: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="info">
+    <h3>VR Test Harness</h3>
+    <p>Tests for hand tracking interactions</p>
+    <ol>
+      <li>Enter VR mode</li>
+      <li>Test each button with index finger</li>
+      <li>Check console for test results on exit</li>
+    </ol>
+  </div>
+  
+  <div class="controls">
+    <button onclick="console.log(window.VRTestLogger.exportResults())">
+      Export Results
+    </button>
+    <button onclick="window.VRTestLogger.events = []">
+      Clear Log
+    </button>
+  </div>
+
+  <a-scene 
+    webxr="mode: immersive-ar;
+           optionalFeatures: hit-test, dom-overlay, anchors;
+           requiredFeatures: local-floor, hand-tracking;
+           referenceSpaceType: local-floor"
+    renderer="antialias: true; colorManagement: true; precision: high; foveationLevel: 1"
+    background="color: transparent"
+    vr-mode-ui="enabled: true; enterAREnabled: true; enterVREnabled: true"
+    vr-test-scene>
+    
+    <!-- Camera with hand tracking -->
+    <a-entity camera position="0 1.6 0">
+      <a-entity hand-tracking-controls="hand: left"></a-entity>
+      <a-entity hand-tracking-controls="hand: right"></a-entity>
+    </a-entity>
+    
+    <!-- Debug displays -->
+    <a-text
+      id="distance-display"
+      position="-0.5 2 -1.5"
+      value="Distance: --"
+      color="#00FF00"
+      width="2"
+      distance-measurement>
+    </a-text>
+    
+    <a-text
+      id="fps-display"
+      position="0.5 2 -1.5"
+      value="FPS: --"
+      color="#FFFF00"
+      width="2">
+    </a-text>
+    
+    <a-text
+      id="debug-log"
+      position="0 0.8 -1.5"
+      value="Events will appear here"
+      color="#FFFFFF"
+      width="1.5"
+      align="center">
+    </a-text>
+    
+    <!-- Test area marker -->
+    <a-plane
+      position="0 1.5 -1.5"
+      rotation="0 0 0"
+      width="0.8"
+      height="0.5"
+      color="#333333"
+      opacity="0.3">
+    </a-plane>
+    
+    <!-- Lighting -->
+    <a-light type="ambient" color="#666"></a-light>
+    <a-light type="directional" position="0 2 -1" color="#FFF"></a-light>
+  </a-scene>
+</body>
+</html>
